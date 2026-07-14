@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Computer Vision Analytics</title>
+    <style>
+        :root {
+            --card-bg: rgba(255, 255, 255, 0.85);
+            --text-main: #1e293b;
+            --text-muted: #64748b;
+            --accent: #6366f1;
+            --accent-hover: #4f46e5;
+            --border: rgba(226, 232, 240, 0.7);
+            --success: #059669;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', system-ui, sans-serif; }
+        
+        /* Continuous Light-Theme Ambient Moving Gradient Background */
+        body { 
+            background: linear-gradient(-45deg, #9073ae, #5597c4, #6fb47f, #ff8289, #d7d380);
+            background-size: 500% 500%;
+            animation: ambientShift 12s ease infinite;
+            color: var(--text-main); 
+            display: flex; 
+            height: 100vh; 
+            overflow: hidden; 
+        }
+
+        @keyframes ambientShift {
+            0% { background-position: 0% 50%; }
+            25% { background-position: 50% 100%; }
+            50% { background-position: 100% 50%; }
+            75% { background-position: 50% 0%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        /* Glassmorphism Navigation Sidebar */
+        .sidebar { 
+            width: 280px; 
+            background: rgba(255, 255, 255, 0.6); 
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border-right: 1px solid var(--border); 
+            padding: 2.5rem 1.5rem; 
+            display: flex; 
+            flex-direction: column; 
+            gap: 2.5rem; 
+        }
+        .logo h2 { font-size: 1.4rem; font-weight: 800; background: linear-gradient(to right, #4f46e5, #ec4899); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .nav-links { list-style: none; display: flex; flex-direction: column; gap: 0.75rem; }
+        .nav-item { padding: 0.85rem 1.25rem; border-radius: 0.75rem; cursor: pointer; color: var(--text-muted); font-weight: 600; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+        .nav-item:hover { background: rgba(255, 255, 255, 0.8); color: var(--text-main); transform: translateX(4px); }
+        .nav-item.active { background: linear-gradient(135deg, #6366f1, #4f46e5); color: white; box-shadow: 0 4px 14px rgba(99, 102, 241, 0.35); }
+
+        /* Main Workspace Content Area */
+        .workspace { flex: 1; padding: 3rem; overflow-y: auto; display: flex; flex-direction: column; gap: 2rem; }
+        .view-section { display: none; flex-direction: column; gap: 2rem; }
+        .view-section.active { display: flex; }
+        
+        .header h1 { font-size: 2.2rem; font-weight: 800; tracking: -0.5px; color: #0f172a; margin-bottom: 0.4rem; }
+        .header p { color: var(--text-muted); font-size: 1rem; font-weight: 500; }
+
+        /* Structural Panel Layout */
+        .panel-grid { display: grid; grid-template-columns: 1.11fr 0.89fr; gap: 2.5rem; min-height: 460px; }
+        .card { 
+            background: var(--card-bg); 
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid var(--border); 
+            border-radius: 1.25rem; 
+            padding: 2.5rem; 
+            display: flex; 
+            flex-direction: column; 
+            gap: 1.75rem; 
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.04), 0 8px 10px -6px rgba(0, 0, 0, 0.04);
+        }
+        
+        /* Interactive Drag and Drop Upload Engine */
+        .dropzone { border: 2px dashed #cbd5e1; border-radius: 0.85rem; padding: 4rem 2rem; text-align: center; cursor: pointer; background: rgba(248, 250, 252, 0.6); transition: all 0.25s ease; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0.85rem; }
+        .dropzone:hover { border-color: var(--accent); background: rgba(255, 255, 255, 1); box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.1); }
+        .dropzone p { font-size: 0.95rem; color: var(--text-muted); font-weight: 500; }
+        .dropzone input { display: none; }
+        
+        .preview-container { display: none; width: 100%; max-height: 260px; border-radius: 0.85rem; overflow: hidden; border: 1px solid var(--border); box-shadow: inset 0 2px 4px rgba(0,0,0,0.02); }
+        .preview-img { width: 100%; height: 100%; object-fit: contain; background: #ffffff; }
+        
+        /* Action Button Controls */
+        .btn { background: linear-gradient(135deg, #4f46e5, #6366f1); color: white; border: none; padding: 1rem 1.5rem; border-radius: 0.75rem; font-weight: 600; font-size: 1rem; cursor: pointer; transition: all 0.25s ease; display: inline-flex; align-items: center; justify-content: center; gap: 0.75rem; width: 100%; box-shadow: 0 4px 12px rgba(79, 70, 229, 0.2); }
+        .btn:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 6px 16px rgba(79, 70, 229, 0.3); }
+        .btn:disabled { background: #e2e8f0; color: #94a3b8; box-shadow: none; cursor: not-allowed; }
+
+        /* Dynamic Metrics Report Display */
+        .result-placeholder { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; color: var(--text-muted); text-align: center; gap: 0.5rem; font-weight: 500; }
+        .result-content { display: none; flex-direction: column; gap: 2rem; }
+        .badge { display: inline-block; background: linear-gradient(135deg, #e0e7ff, #e0f2fe); color: #4338ca; padding: 0.4rem 0.9rem; border-radius: 2rem; font-weight: 700; font-size: 0.8rem; letter-spacing: 0.5px; align-self: start; text-transform: uppercase; }
+        .prediction-title { font-size: 2.4rem; font-weight: 800; color: var(--success); letter-spacing: -0.5px; }
+        
+        /* Educational Model Knowledge Info Box */
+        .info-panel {
+            background: rgba(248, 250, 252, 0.8);
+            border: 1px solid var(--border);
+            border-radius: 0.75rem;
+            padding: 1.25rem;
+            margin-top: 0.5rem;
+        }
+        .info-panel h3 { font-size: 1rem; font-weight: 700; margin-bottom: 0.5rem; color: #1e293b; display: flex; align-items: center; gap: 0.5rem; }
+        .info-panel p { font-size: 0.88rem; color: #475569; line-height: 1.5; }
+
+        /* Auto-Generated Summary Text Box */
+        .insight-box { padding: 1rem 1.25rem; background: rgba(240, 253, 250, 0.8); border-left: 4px solid #10b981; border-radius: 0.5rem; font-size: 0.95rem; color: #065f46; font-weight: 500; line-height: 1.5; }
+
+        /* Probability Chart Component bars */
+        .prob-container { display: flex; flex-direction: column; gap: 1rem; }
+        .prob-row { display: flex; flex-direction: column; gap: 0.4rem; }
+        .prob-labels { display: flex; justify-content: space-between; font-size: 0.9rem; font-weight: 600; color: #334155; }
+        .bar-bg { width: 100%; height: 10px; background: #f1f5f9; border-radius: 6px; overflow: hidden; }
+        .bar-fill { height: 100%; background: linear-gradient(90deg, #6366f1, #3b82f6); width: 0%; transition: width 0.8s cubic-bezier(0.34, 1.56, 0.64, 1); }
+
+        .spinner { display: none; width: 20px; height: 20px; border: 3px solid rgba(255,255,255,0.3); border-radius: 50%; border-top-color: white; animation: spin 0.8s linear infinite; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+    </style>
+</head>
+<body>
+
+    <aside class="sidebar">
+        <div class="logo">
+            <h2>VisionStudio AI</h2>
+        </div>
+        <ul class="nav-links">
+            <li class="nav-item active" onclick="switchView('rice-section', this)">Rice Classifier</li>
+            <li class="nav-item" onclick="switchView('vehicle-section', this)">Vehicle Classifier</li>
+        </ul>
+    </aside>
+
+    <main class="workspace">
+        
+        <!-- View 1: Rice Content Panel -->
+        <section id="rice-section" class="view-section active">
+            <div class="header">
+                <h1>Rice Variety Classifier</h1>
+                <p>Computer vision model analyzing unique morphologic grain structures.</p>
+            </div>
+            <div class="panel-grid">
+                <div class="card">
+                    <div class="dropzone" id="rice-dropzone" onclick="document.getElementById('rice-input').click()">
+                        <p>Drop image file here or click to <strong>browse directory</strong></p>
+                        <input type="file" id="rice-input" accept="image/*" onchange="handleFileSelect(this, 'rice-preview', 'rice-btn')">
+                    </div>
+                    <div class="preview-container" id="rice-preview-container">
+                        <img id="rice-preview" class="preview-img" alt="Preview Image">
+                    </div>
+                    <button class="btn" id="rice-btn" disabled onclick="executePrediction('/predict', 'rice-input', 'rice-result-placeholder', 'rice-result-content', this)">
+                        <span class="spinner"></span><span class="btn-text">Execute Model Inference</span>
+                    </button>
+                    <!-- Knowledge Architecture Summary Box -->
+                    <div class="info-panel">
+                        <h3>⚙️ Model Architecture & Strategy</h3>
+                        <p><strong>Methodology:</strong> Custom CNN. Built using a self-engineered Deep Neural Network layout utilizing optimized convolutional filters (`Conv2D`), local translation normalization rules, and specialized multi-layer perceptron dense mapping networks trained from scratch.</p>
+                    </div>
+                </div>
+                <div class="card" style="justify-content: center;">
+                    <div id="rice-result-placeholder" class="result-placeholder">
+                        <p>Awaiting payload image configuration submission...</p>
+                    </div>
+                    <div id="rice-result-content" class="result-content">
+                        <div>
+                            <span class="badge">Identified Classification</span>
+                            <div class="prediction-title" id="rice-predicted-class">-</div>
+                        </div>
+                        <div class="insight-box" id="rice-insight-text"></div>
+                        <div class="prob-container" id="rice-probabilities"></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- View 2: Vehicle Content Panel -->
+        <section id="vehicle-section" class="view-section">
+            <div class="header">
+                <h1>Vehicle Core Classifier</h1>
+                <p>Differentiates between Car configurations and Motorcycle structural prints.</p>
+            </div>
+            <div class="panel-grid">
+                <div class="card">
+                    <div class="dropzone" id="vehicle-dropzone" onclick="document.getElementById('vehicle-input').click()">
+                        <p>Drop image file here or click to <strong>browse directory</strong></p>
+                        <input type="file" id="vehicle-input" accept="image/*" onchange="handleFileSelect(this, 'vehicle-preview', 'vehicle-btn')">
+                    </div>
+                    <div class="preview-container" id="vehicle-preview-container">
+                        <img id="vehicle-preview" class="preview-img" alt="Preview Image">
+                    </div>
+                    <button class="btn" id="vehicle-btn" disabled onclick="executePrediction('/predict_vehicle', 'vehicle-input', 'vehicle-result-placeholder', 'vehicle-result-content', this)">
+                        <span class="spinner"></span><span class="btn-text">Execute Model Inference</span>
+                    </button>
+                    <!-- Knowledge Architecture Summary Box -->
+                    <div class="info-panel">
+                        <h3>⚙️ Model Architecture & Strategy</h3>
+                        <p><strong>Methodology:</strong> Transfer Learning. Utilizes the features of a pre-trained <strong>VGG16</strong> base network trained on millions of data images, augmented with top-tier specialized feature flattening layers for optimized binary classification vectors.</p>
+                    </div>
+                </div>
+                <div class="card" style="justify-content: center;">
+                    <div id="vehicle-result-placeholder" class="result-placeholder">
+                        <p>Awaiting payload image configuration submission...</p>
+                    </div>
+                    <div id="vehicle-result-content" class="result-content">
+                        <div>
+                            <span class="badge">Identified Classification</span>
+                            <div class="prediction-title" id="vehicle-predicted-class">-</div>
+                        </div>
+                        <div class="insight-box" id="vehicle-insight-text"></div>
+                        <div class="prob-container" id="vehicle-probabilities"></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <script>
+        function switchView(sectionId, element) {
+            document.querySelectorAll('.view-section').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+            document.getElementById(sectionId).classList.add('active');
+            element.classList.add('active');
+        }
+
+        function handleFileSelect(input, previewId, buttonId) {
+            const file = input.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const preview = document.getElementById(previewId);
+                    preview.src = e.target.result;
+                    preview.parentElement.style.display = 'block';
+                    document.getElementById(buttonId).removeAttribute('disabled');
+                }
+                reader.readAsDataURL(file);
+            }
+        }
+
+        function executePrediction(url, inputId, placeholderId, contentId, buttonEl) {
+            const fileInput = document.getElementById(inputId);
+            if (!fileInput.files[0]) return;
+
+            const formData = new FormData();
+            formData.append('image', fileInput.files[0]);
+
+            const spinner = buttonEl.querySelector('.spinner');
+            const btnText = buttonEl.querySelector('.btn-text');
+            buttonEl.disabled = true;
+            spinner.style.display = 'inline-block';
+            btnText.innerText = 'Calculating Weights...';
+
+            fetch(url, { method: 'POST', body: formData })
+            .then(res => res.json())
+            .then(data => {
+                buttonEl.disabled = false;
+                spinner.style.display = 'none';
+                btnText.innerText = 'Execute Model Inference';
+
+                if (data.status === 'success') {
+                    document.getElementById(placeholderId).style.display = 'none';
+                    document.getElementById(contentId).style.display = 'flex';
+
+                    const prefix = url.includes('vehicle') ? 'vehicle-' : 'rice-';
+                    
+                    document.getElementById(`${prefix}predicted-class`).innerText = data.predicted_class;
+
+                    document.getElementById(`${prefix}insight-text`).innerText = 
+                        `Analysis complete. The network identifies the subject as a "${data.predicted_class}". Data successfully parsed and logged into MongoDB historical collections.`;
+
+                    const metricsContainer = document.getElementById(`${prefix}probabilities`);
+                    metricsContainer.innerHTML = '';
+
+                    data.probabilities[0].forEach((prob, idx) => {
+                        const scorePercentage = (prob * 100).toFixed(2);
+                        const displayClassName = (data.class_names && data.class_names[idx]) ? data.class_names[idx] : `Class #${idx}`;
+                        
+                        const markup = `
+                            <div class="prob-row">
+                                <div class="prob-labels">
+                                    <span>${displayClassName}</span>
+                                    <span>${scorePercentage}%</span>
+                                </div>
+                                <div class="bar-bg">
+                                    <div class="bar-fill" style="width: ${scorePercentage}%"></div>
+                                </div>
+                            </div>
+                        `;
+                        metricsContainer.innerHTML += markup;
+                    });
+                } else {
+                    alert('Operational Fault: ' + data.message);
+                }
+            })
+            .catch(err => {
+                buttonEl.disabled = false;
+                spinner.style.display = 'none';
+                btnText.innerText = 'Execute Model Inference';
+                alert('Inference Stream Error: ' + err);
+            });
+        }
+    </script>
+</body>
+</html>
